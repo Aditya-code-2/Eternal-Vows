@@ -37,13 +37,37 @@ app.use((err, req, res, next) => {
 // DB connection + Server start
 const PORT = process.env.PORT || 5000;
 
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eternal-vows')
-  .then(() => {
+// mongoose
+//   .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eternal-vows')
+//   .then(() => {
+//     console.log('✅ MongoDB connected');
+//     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+//   })
+//   .catch((err) => {
+//     console.error('❌ MongoDB connection error:', err);
+//     process.exit(1);
+//   });
+let isConnected = false;
+async function connectToMongoDB() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eternal-vows', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    isConnected = true;
     console.log('✅ MongoDB connected');
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     process.exit(1);
-  });
+  }
+}
+app.use((req , res ,next)=>{
+  if(!isConnected){
+    connectToMongoDB();
+  }
+  next();
+})
+
+app.use('/api/events' , eventRoutes);
+app.use('/api/notifications' , notificationRoutes);
+module.exports = app;
